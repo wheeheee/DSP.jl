@@ -545,7 +545,7 @@ function dpss(n::Integer, nw::Real, ntapers::Integer=ceil(Int, 2*nw)-1;
 
     # Get tapers
     eigvec = eigen!(mat, n-ntapers+1:n).vectors
-    rv = reverse!(eigvec; dims=2)::Matrix{Float64}
+    rv = reverse(eigvec; dims=2)::Matrix{Float64}
 
     # Slepian's convention; taper starts with a positive element
     sgn = fill!(resize!(dv, ntapers), 1)
