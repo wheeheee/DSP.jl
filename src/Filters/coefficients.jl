@@ -165,15 +165,13 @@ function Base.:^(f::PolynomialRatio{D,T}, e::Integer) where {D,T}
     end
 end
 
-function _rev_zeropad_f(v::AbstractVector{T}, n) where T
+function _rev_zeropad(v::AbstractVector{T}, n, pad_len=n) where T
     padded_v = zeros(T, length(v) + n)
-    copyto!(padded_v, Iterators.reverse(v))
+    copyto!(padded_v, 1 + pad_len, Iterators.reverse(v))
 end
 
-function _rev_zeropad_b(v::AbstractVector{T}, n) where T
-    padded_v = zeros(T, length(v) + n)
-    copyto!(padded_v, n+1, Iterators.reverse(v))
-end
+coef_s(p::LaurentPolynomial) = _rev_zeropad(coeffs(p), firstindex(p), 0)
+coef_z(p::LaurentPolynomial) = _rev_zeropad(coeffs(p), -lastindex(p))
 
 """
     coefb(f)
@@ -181,8 +179,8 @@ end
 Coefficients of the numerator of a PolynomialRatio object, highest power
 first, i.e., the `b` passed to `filt()`
 """
-coefb(f::PolynomialRatio{:s}) = _rev_zeropad_f(coeffs(f.b), firstindex(f.b))
-coefb(f::PolynomialRatio{:z}) = _rev_zeropad_b(coeffs(f.b), -lastindex(f.b))
+coefb(f::PolynomialRatio{:s}) = coef_s(f.b)
+coefb(f::PolynomialRatio{:z}) = coef_z(f.b)
 coefb(f::FilterCoefficients) = coefb(PolynomialRatio(f))
 
 """
@@ -191,8 +189,8 @@ coefb(f::FilterCoefficients) = coefb(PolynomialRatio(f))
 Coefficients of the denominator of a PolynomialRatio object, highest power
 first, i.e., the `a` passed to `filt()`
 """
-coefa(f::PolynomialRatio{:s}) = _rev_zeropad_f(coeffs(f.a), firstindex(f.a))
-coefa(f::PolynomialRatio{:z}) = _rev_zeropad_b(coeffs(f.a), -lastindex(f.a))
+coefa(f::PolynomialRatio{:s}) = coef_s(f.a)
+coefa(f::PolynomialRatio{:z}) = coef_z(f.a)
 coefa(f::FilterCoefficients) = coefa(PolynomialRatio(f))
 
 #
