@@ -68,7 +68,7 @@ end
 # Single rate filtering
 #
 
-function test_singlerate(h, x)
+function test_singlerate(h::AbstractVector{T}, x::AbstractVector) where T
     xLen       = length(x)
     hLen       = length(h)
     pivotPoint = min(rand(50:150), div(xLen, 4))
@@ -82,7 +82,7 @@ function test_singlerate(h, x)
     @printfifinteractive( "\nTesting single-rate fitering, h is %s, x is %s. xLen = %d, hLen = %d", string(eltype(h)), string(eltype(x)), xLen, hLen )
 
     @printfifinteractive( "\n\tBase.filt\n\t\t")
-    @timeifinteractive naiveResult = filt(h, 1.0, x)
+    @timeifinteractive naiveResult = filt(h, one(T), x)
 
     @printfifinteractive( "\n\tDSP.filt( h, x, 1//1 )\n\t\t" )
     @timeifinteractive statelesResult = DSP.filt( h, x )
