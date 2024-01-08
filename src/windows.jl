@@ -1,6 +1,6 @@
 module Windows
 using ..Util
-import SpecialFunctions: besseli
+using SpecialFunctions: besseli
 using LinearAlgebra: Diagonal, SymTridiagonal, eigen!, mul!, rmul!
 using FFTW
 
