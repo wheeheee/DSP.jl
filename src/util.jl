@@ -207,7 +207,7 @@ function unsafe_dot(a::AbstractMatrix, aColIdx::Integer, b::AbstractVector, bLas
     bBaseIdx = bLastIdx - aLen
     dotprod  = a[1, aColIdx] * b[ bBaseIdx + 1]
     @simd for i in 2:aLen
-        @inbounds dotprod += a[i, aColIdx] * b[bBaseIdx + i]
+        @inbounds dotprod = muladd(a[i, aColIdx], b[bBaseIdx + i], dotprod)
     end
 
     return dotprod
@@ -225,10 +225,10 @@ function unsafe_dot(a::AbstractMatrix, aColIdx::Integer, b::AbstractVector{T}, c
 
     dotprod = a[1, aColIdx] * b[cLastIdx]
     @simd for i in 2:aLen-cLastIdx
-        @inbounds dotprod += a[i, aColIdx] * b[i+cLastIdx-1]
+        @inbounds dotprod = muladd(a[i, aColIdx], b[i+cLastIdx-1], dotprod)
     end
     @simd for i in 1:cLastIdx
-        @inbounds dotprod += a[aLen-cLastIdx+i, aColIdx] * c[i]
+        @inbounds dotprod = muladd(a[aLen-cLastIdx+i, aColIdx], c[i], dotprod)
     end
 
     return dotprod
@@ -239,7 +239,7 @@ function unsafe_dot(a::T, b::AbstractArray, bLastIdx::Integer) where T
     bBaseIdx = bLastIdx - aLen
     @inbounds dotprod  = a[1] * b[bBaseIdx + 1]
     @simd for i in 2:aLen
-        @inbounds dotprod += a[i] * b[bBaseIdx + i]
+        @inbounds dotprod = muladd(a[i], b[bBaseIdx + i], dotprod)
     end
 
     return dotprod
@@ -253,10 +253,10 @@ function unsafe_dot(a::AbstractVector, b::AbstractVector{T}, c::AbstractVector{T
     aLen    = length(a)
     dotprod = zero(a[1]*b[1])
     @simd for i in 1:aLen-cLastIdx
-        @inbounds dotprod += a[i] * b[i+cLastIdx-1]
+        @inbounds dotprod = muladd(a[i], b[i+cLastIdx-1], dotprod)
     end
     @simd for i in 1:cLastIdx
-        @inbounds dotprod += a[aLen-cLastIdx+i] * c[i]
+        @inbounds dotprod = muladd(a[aLen-cLastIdx+i], c[i], dotprod)
     end
 
     return dotprod
