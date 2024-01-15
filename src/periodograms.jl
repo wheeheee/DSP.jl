@@ -87,8 +87,9 @@ function fft2pow!(out::AbstractArray{T}, s_fft::AbstractVector{Complex{T}}, nfft
             # Convert real FFT to two-sided
             out[offset+1] = muladd(abs2(s_fft[1]), m1, out[offset+1])
             @inbounds for i = 2:length(s_fft)-1
-                out[offset+i] = muladd(abs2(s_fft[i]), m1, out[offset+i])
-                out[offset+nfft-i+2] = muladd(abs2(s_fft[i]), m1, out[offset+nfft-i+2])
+                k = abs2(s_fft[i])
+                out[offset+i] = muladd(k, m1, out[offset+i])
+                out[offset+nfft-i+2] = muladd(k, m1, out[offset+nfft-i+2])
             end
             out[offset+n] = muladd(abs2(s_fft[n]), m1, out[offset+n])
             if isodd(nfft)
