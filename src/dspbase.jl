@@ -111,9 +111,12 @@ end
 @generated function _filt_fir!(out, b::NTuple{N,T}, x, siarr, col) where {N,T}
     silen = N - 1
     si_end = Symbol(:si_, silen)
+    SMALL_FILT_VECT_CUTOFF = 18
+    si_check = N > SMALL_FILT_VECT_CUTOFF ? :(nothing) : :(@assert length(siarr) == $silen)
+
     q = quote
-        $si_end = siarr[$silen]
-        Base.@nextract $(silen-1) si siarr
+        $si_check
+        Base.@nextract $silen si siarr
         for i in axes(x, 1)
             xi = x[i, col]
             val = muladd(xi, b[1], si_1)
@@ -123,12 +126,11 @@ end
         end
     end
 
-    if N > 18
+    if N > SMALL_FILT_VECT_CUTOFF
         loop_args = q.args[6].args[2].args
         for i in (2, 10)
             loop_args[i] = :(@inbounds $(loop_args[i]))
         end
-        q.args[1:2], q.args[3:4] = q.args[3:4], q.args[1:2]
     end
     q
 end
