@@ -121,7 +121,7 @@ end
             xi = x[i, col]
             val = muladd(xi, b[1], si_1)
             Base.@nexprs $(silen-1) j -> (si_j = muladd(xi, b[j+1], si_{j+1}))
-            $si_end = b[N] * xi
+            $si_end = muladd(b[N], xi, zero(T))
             out[i, col] = val
         end
     end
