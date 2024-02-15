@@ -359,17 +359,17 @@ function split_real_complex(x::Vector{T}; sortby=nothing) where T
     end
     for k in ks
         if imag(k) != 0
-            if !haskey(d, conj(k)) || d[k] != d[conj(k)]
+            if !(haskey(d, conj(k)) && d[k] == d[conj(k)])
                 # No match for conjugate
                 return (c, r, false)
             elseif imag(k) > 0
                 # Add key and its conjugate
-                for n = 1:d[k]
+                for _ = 1:d[k]
                     push!(c, k, conj(k))
                 end
             end
         else
-            for n = 1:d[k]
+            for _ = 1:d[k]
                 push!(r, k)
             end
         end
