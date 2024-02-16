@@ -1,5 +1,13 @@
 !(dirname(@__FILE__) in LOAD_PATH) && push!(LOAD_PATH, dirname(@__FILE__))
-using DSP, Test, Random, FilterTestHelpers
+using Test, FilterTestHelpers
+using DelimitedFiles: readdlm
+using DSP.Filters:
+    Butterworth, Chebyshev1, Chebyshev2, Elliptic,
+    PolynomialRatio, Biquad, SecondOrderSections, DF2TFilter,
+    filt, filt!, filtfilt, iir_filtfilt, fftfilt, fftfilt!, tdfilt, tdfilt!,
+    digitalfilter, analogfilter, filt_stepstate,
+    Lowpass, Highpass, Bandpass
+
 #
 # filt with different filter forms
 #
@@ -82,7 +90,7 @@ end
     b = [ 0.00327922,  0.01639608,  0.03279216,  0.03279216,  0.01639608,  0.00327922]
     a = [ 1.        , -2.47441617,  2.81100631, -1.70377224,  0.54443269, -0.07231567]
 
-    @test ≈(zi_python, DSP.Filters.filt_stepstate(b, a), atol=1e-7)
+    @test ≈(zi_python, filt_stepstate(b, a), atol=1e-7)
 
     ##############
     #
@@ -99,7 +107,7 @@ end
     b = [0.222, 0.43, 0.712]
     a = [1, 0.33, 0.22]
 
-    @test zi_matlab ≈ DSP.Filters.filt_stepstate(b, a)
+    @test zi_matlab ≈ filt_stepstate(b, a)
 
 
     ##############
@@ -118,7 +126,7 @@ end
     b = [ 0.00327922,  0.01639608,  0.03279216,  0.03279216,  0.01639608,  0.00327922]
     a = [ 1.1       , -2.47441617,  2.81100631, -1.70377224,  0.54443269, -0.07231567]
 
-    @test ≈(zi_python, DSP.Filters.filt_stepstate(b, a), atol=1e-7)
+    @test ≈(zi_python, filt_stepstate(b, a), atol=1e-7)
 end
 
 
@@ -138,7 +146,7 @@ end
     b = [0.4, 1]
     z = [0.4750]
     x  = readdlm(joinpath(dirname(@__FILE__), "data", "spectrogram_x.txt"),'\t')
-    DSP.Filters.filt!(vec(x), b, a, vec(x), z)
+    filt!(vec(x), b, a, vec(x), z)
 
     @test matlab_filt ≈ x
 end
@@ -233,13 +241,13 @@ end
 @testset "filtfilt SOS" begin
     x  = readdlm(joinpath(dirname(@__FILE__), "data", "spectrogram_x.txt"),'\t')
 
-    f = DSP.digitalfilter(DSP.Lowpass(0.2), DSP.Butterworth(4))
+    f = digitalfilter(Lowpass(0.2), Butterworth(4))
     @test filtfilt(convert(SecondOrderSections, f), x) ≈ filtfilt(convert(PolynomialRatio, f), x)
 
-    f = DSP.digitalfilter(DSP.Highpass(0.1), DSP.Butterworth(6))
+    f = digitalfilter(Highpass(0.1), Butterworth(6))
     @test filtfilt(convert(SecondOrderSections, f), x) ≈ filtfilt(convert(PolynomialRatio, f), x)
 
-    f = DSP.digitalfilter(DSP.Bandpass(0.1, 0.3), DSP.Butterworth(2))
+    f = digitalfilter(Bandpass(0.1, 0.3), Butterworth(2))
     @test filtfilt(convert(SecondOrderSections, f), x) ≈ filtfilt(convert(PolynomialRatio, f), x)
 end
 
@@ -272,7 +280,7 @@ end
 @testset "fir_filtfilt" begin
     b = randn(10)
     for x in (randn(100), randn(100, 2))
-        @test DSP.Filters.filtfilt(b, x) ≈ DSP.Filters.iir_filtfilt(b, [1.0], x)
-        @test DSP.Filters.filtfilt(b, [2.0], x) ≈ DSP.Filters.iir_filtfilt(b, [2.0], x)
+        @test filtfilt(b, x) ≈ iir_filtfilt(b, [1.0], x)
+        @test filtfilt(b, [2.0], x) ≈ iir_filtfilt(b, [2.0], x)
     end
 end

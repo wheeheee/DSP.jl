@@ -1,6 +1,6 @@
-using DSP
 using Test
 using DelimitedFiles: readdlm
+using DSP.Filters: resample, resample_filter, freqresp, PolynomialRatio
 
 @testset "rational ratio" begin
     # AM Modulator

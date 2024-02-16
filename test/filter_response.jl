@@ -1,7 +1,11 @@
-using DSP, Test
+using Test
 using DelimitedFiles: readdlm
 using Polynomials: Polynomial
 
+using DSP: conv
+using DSP.Filters:
+    PolynomialRatio, ZeroPoleGain, Biquad, SecondOrderSections,
+    freqresp, phaseresp, grpdelay, impresp, stepresp
 
 #######################################
 #

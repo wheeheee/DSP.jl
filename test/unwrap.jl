@@ -1,4 +1,6 @@
-using DSP, Test
+using Test
+using Random: MersenneTwister
+using DSP.Unwrap: unwrap, unwrap!
 
 @testset "Unwrap 1D" begin
     @test unwrap([0.1, 0.2, 0.3, 0.4]) ≈ [0.1, 0.2, 0.3, 0.4]

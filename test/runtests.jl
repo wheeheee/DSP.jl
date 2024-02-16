@@ -1,6 +1,4 @@
-using DSP, FFTW, Test
-
-using DSP: allocate_output
+using Test
 using Random: seed!
 
 module_tests = [

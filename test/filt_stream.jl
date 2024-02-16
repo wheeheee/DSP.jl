@@ -1,4 +1,6 @@
-using DSP, Test
+using Test
+using DSP.Filters: filt, filt!, reset!, digitalfilter, inputlength,
+    FIRFilter, FIRWindow, Lowpass
 
 # Naive rational resampler
 function naivefilt(h::Vector, x::Vector{T}, resamplerate::Union{Integer, Rational}=1) where T

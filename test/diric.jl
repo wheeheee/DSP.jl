@@ -1,4 +1,6 @@
 # diric.jl Dirichlet kernel tests
+using Test
+using DSP: diric
 
 @testset "diric" begin
     @test_throws ArgumentError diric(0, -2)

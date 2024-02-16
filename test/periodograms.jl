@@ -14,9 +14,18 @@
 #  close(fid)
 #end
 
-using DSP, Test
+using Test, DelimitedFiles
 using Statistics: mean
-using FFTW: fftfreq
+using FFTW: fftfreq, fftshift, fft, ifft, rfft
+using DSP: allocate_output
+using DSP.Periodograms: spectrogram, periodogram, welch_pgram,
+    MTConfig, mt_pgram, mt_pgram!,
+    MTSpectrogramConfig, mt_spectrogram, mt_spectrogram!,
+    power, freq, time,
+    stft, fft2oneortwosided!, fftouttype,
+    arraysplit
+
+using DSP.Windows: hanning, hamming, bartlett, dpss
 
 @testset "matlab ref" begin
     x0 = vec(readdlm(joinpath(dirname(@__FILE__), "data", "spectrogram_x.txt"),'\t'))
@@ -264,26 +273,26 @@ end
     data2d = readdlm(joinpath(dirname(@__FILE__), "data", "per2dx.txt"),'\t')
     expectedsum = vec(readdlm(joinpath(dirname(@__FILE__), "data", "per2dsum.txt"),'\t'))
     expectedmean = vec(readdlm(joinpath(dirname(@__FILE__), "data", "per2dmean.txt"),'\t'))
-    # 2-d periodgram (radialsum)
+    # 2-d periodogram (radialsum)
     # computed in octave with raPsd2d ((C) E. Ruzanski) replacing nanmean with nansum
     # P = raPsd2d(x,1)'*n^2
     @test power(periodogram(data2d,fs=1, radialsum=true)) ≈ expectedsum
 
-    # 2-d periodgram (radialavg)
+    # 2-d periodogram (radialavg)
     # computed in octave with raPsd2d ((C) E. Ruzanski)
     # P = raPsd2d(x,1)'*n^2
     @test power(periodogram(data2d, fs=1, radialavg=true)) ≈ expectedmean
 
-    # 2-d periodgram 2-d PSD
+    # 2-d periodogram 2-d PSD
     @test power(periodogram(data2d, fs=1)) ≈ abs2.(fft(data2d))*1/prod(size(data2d))
-    # 2-d periodgram 2-d PSD with padding
+    # 2-d periodogram 2-d PSD with padding
     pads = (size(data2d,1)+4,size(data2d,1)+7)
     data2dpad = zeros(Float64,pads...)
     data2dpad[1:size(data2d,1),1:size(data2d,2)] = data2d
     @test power(periodogram(data2d, fs=1, nfft=pads)) ≈ abs2.(fft(data2dpad))*1/prod(size(data2d))
-    # 2-d periodgram radial freq
+    # 2-d periodogram radial freq
     @test freq(periodogram(data2d, fs=3.3, radialsum=true)) ≈ freq(periodogram(vec(data2d[1,:]), fs=3.3))
-    # 2-d periodgram 2-d freq
+    # 2-d periodogram 2-d freq
     f1,f2 = freq(periodogram(data2d, fs=3.3))
     f1d = freq(periodogram(vec(data2d[1,:]), fs=3.3, onesided=false))
     @assert size(data2d,1)==size(data2d,2)
@@ -301,7 +310,7 @@ end
 end
 
 @testset "radial" begin
-    # 2-d periodgram radial test for a non-square signal sparse in fft space
+    # 2-d periodogram radial test for a non-square signal sparse in fft space
     n1 = 52
     n2 = 46  # assuming n1>n2
     nf = (22,7) # the non-zero location
@@ -329,7 +338,7 @@ end
     nhop = 160
     s = vec(readdlm(joinpath(dirname(@__FILE__), "data", "stft_x.txt"),'\t'))
 
-    Sjl = stft(s, nwin, nwin-nhop; nfft=nfft, fs=fs, window=hanning)
+    Sjl = stft(s, nwin, nwin-nhop; nfft, fs, window=hanning)
     Sml_re = readdlm(joinpath(dirname(@__FILE__), "data", "stft_S_real.txt"),'\t')
     Sml_im = readdlm(joinpath(dirname(@__FILE__), "data", "stft_S_imag.txt"),'\t')
     Sml = complex.(Sml_re, Sml_im)
@@ -354,7 +363,7 @@ end
         xfft = fft(x)
         out = zeros(fftouttype(atype),nout,3)
         if !(onesided == true && atype <: Complex)
-            outft = DSP.Periodograms.fft2oneortwosided!(out, xrcfft, nfft, onesided, nout)
+            outft = fft2oneortwosided!(out, xrcfft, nfft, onesided, nout)
         end
         if onesided == true && atype <: Real
             @test out[:,2] ≈ xrcfft

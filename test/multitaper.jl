@@ -1,3 +1,16 @@
+using Test
+using Statistics: mean
+using DelimitedFiles: readdlm
+using FFTW: ESTIMATE, fftfreq, rfftfreq, plan_fft, plan_rfft
+
+using DSP: allocate_output
+using DSP.Periodograms: arraysplit, fftouttype,
+    MTConfig, MTSpectrogramConfig,
+    coherence, MTCoherenceConfig, mt_coherence, mt_coherence!,
+    mt_pgram, MTCrossSpectraConfig, mt_cross_power_spectra, mt_cross_power_spectra!,
+    dpss_config,
+    power, freq
+
 const epsilon = 10^-3
 
 @testset "Configuration objects" begin
@@ -20,7 +33,7 @@ const epsilon = 10^-3
         for T in (Float32, Float64, Complex{Float32}, Complex{Float64})
             fft_input_tmp = Vector{T}(undef, nfft)
             onesided = T <: Real
-            fft_flags = FFTW.ESTIMATE
+            fft_flags = ESTIMATE
             freqs = onesided ? rfftfreq(nfft, fs) : fftfreq(nfft, fs)
             fft_output_tmp = Vector{fftouttype(T)}(undef, length(freqs))
             r = fs*ntapers*ones(ntapers)
@@ -70,18 +83,18 @@ const epsilon = 10^-3
 end
 
 @testset "`dpss_config`" begin
-    dpss_config = DSP.Periodograms.dpss_config(Float64, 1024; keep_only_large_evals=false, weight_by_evals=false)
+    dpss_conf = dpss_config(Float64, 1024; keep_only_large_evals=false, weight_by_evals=false)
     mt_config = MTConfig{Float64}(1024)
 
-    @test dpss_config.window ≈ mt_config.window
-    @test dpss_config.ntapers == mt_config.ntapers
-    @test dpss_config.r ≈ mt_config.r
+    @test dpss_conf.window ≈ mt_config.window
+    @test dpss_conf.ntapers == mt_config.ntapers
+    @test dpss_conf.r ≈ mt_config.r
 
-    dpss_config = DSP.Periodograms.dpss_config(Float64, 1024; keep_only_large_evals=false, weight_by_evals=true)
-    @test dpss_config.window ≈ mt_config.window
-    @test dpss_config.ntapers == mt_config.ntapers
+    dpss_conf = dpss_config(Float64, 1024; keep_only_large_evals=false, weight_by_evals=true)
+    @test dpss_conf.window ≈ mt_config.window
+    @test dpss_conf.ntapers == mt_config.ntapers
     # should be different since we're weighting by eigenvalues now
-    @test sum(abs, dpss_config.r - mt_config.r) > 0.1
+    @test sum(abs, dpss_conf.r - mt_config.r) > 0.1
 end
 
 avg_coh(x) = dropdims(mean(coherence(x); dims=3); dims=3)
@@ -261,7 +274,7 @@ end
     # coh = dropdims(mean(mne_coherence_matrix; dims=3); dims=3)[2, 1]
     coh = 0.982356762670818
 
-    mt_config = DSP.Periodograms.dpss_config(Float64, n_samples; fs, keep_only_large_evals=true, weight_by_evals=true)
+    mt_config = dpss_config(Float64, n_samples; fs, keep_only_large_evals=true, weight_by_evals=true)
     config = MTCoherenceConfig(2, mt_config; freq_range = (10,15), demean=true)
     result = avg_coh(mt_coherence(dropdims(more_noisy;dims=1), config))
     @test result[2, 1] ≈ coh
@@ -288,7 +301,7 @@ end
     csd_array_multitaper_values = csd_array_multitaper_values_re + im*csd_array_multitaper_values_im
 
     signal = dropdims(data; dims=1)
-    mt_config = DSP.Periodograms.dpss_config(Float64, n_samples; fs, keep_only_large_evals=true, weight_by_evals=true)
+    mt_config = dpss_config(Float64, n_samples; fs, keep_only_large_evals=true, weight_by_evals=true)
     config = MTCrossSpectraConfig(2, mt_config; demean=true)
     result = mt_cross_power_spectra(signal, config)
     @test signal isa Matrix{Float64}
@@ -304,7 +317,7 @@ end
     @test power(result) ≈ power(result2)
 
     # Float32 output:
-    mt_config32 = DSP.Periodograms.dpss_config(Float32, n_samples; fs, keep_only_large_evals=true, weight_by_evals=true)
+    mt_config32 = dpss_config(Float32, n_samples; fs, keep_only_large_evals=true, weight_by_evals=true)
     config = MTCrossSpectraConfig(size(signal, 1), mt_config32; demean=true)
     out = allocate_output(config)
     @test eltype(out) == Complex{Float32}

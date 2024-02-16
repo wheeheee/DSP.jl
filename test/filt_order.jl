@@ -1,4 +1,5 @@
-using DSP, Test
+using Test
+using DSP.Filters: buttord, ellipord, cheb1ord, cheb2ord, brent, remezord
 
 
 Δ = 1e-3
@@ -209,9 +210,9 @@ end
 # using some simple examples for testing Brent's method.
 @testset "brent" begin
     f1(x) = (x + 3) * ((x - 1)^2) # x³ + x² - 5x + 3
-    @test ≈(f1(DSP.Filters.brent(f1, -4.0, 4.0)), 0.0, atol=1e-8)
-    @test ≈(sin(DSP.Filters.brent(sin, 0.0, 2pi)), -1.0, atol=1e-8)
-    @test ≈(cos(DSP.Filters.brent(cos, 0.0, 2pi)), -1.0, atol=1e-8)
+    @test ≈(f1(brent(f1, -4.0, 4.0)), 0.0, atol=1e-8)
+    @test ≈(sin(brent(sin, 0.0, 2pi)), -1.0, atol=1e-8)
+    @test ≈(cos(brent(cos, 0.0, 2pi)), -1.0, atol=1e-8)
 end
 
 

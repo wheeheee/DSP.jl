@@ -1,7 +1,17 @@
 !(dirname(@__FILE__) in LOAD_PATH) && push!(LOAD_PATH, dirname(@__FILE__))
-using DSP, Test, FilterTestHelpers
+using Test, FilterTestHelpers
 using LinearAlgebra: norm
 using DelimitedFiles: readdlm
+
+using DSP.Filters:
+    Bandpass, Bandstop, Highpass, Lowpass,
+    Butterworth, Chebyshev1, Chebyshev2, Elliptic,
+    digitalfilter, analogfilter,
+    ZeroPoleGain, PolynomialRatio,
+    coefa, coefb, freqresp, iirnotch,
+    kaiserord, FIRWindow
+
+using DSP.Windows: hamming
 
 #
 # Butterworth filter prototype

@@ -1,3 +1,7 @@
+using Test
+using DSP.LPC: lpc, levinson, LPCBurg, LPCLevinson
+using DSP: filt
+
 # Filter some noise, try to learn the coefficients
 using Statistics: std
 @testset "$method" for method in (LPCBurg(), LPCLevinson())

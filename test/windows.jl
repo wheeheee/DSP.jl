@@ -1,4 +1,8 @@
-using FFTW, DSP, Test, DelimitedFiles
+using Test, DelimitedFiles
+using FFTW: ifftshift
+using DSP.Windows: dpss, dpsseig,
+    rect, hanning, hann, hamming, triang, bartlett, bartlett_hann,
+    blackman, kaiser, gaussian, tukey, lanczos, cosine
 
 # not exported, but used for some internal testing
 using DSP.Windows: makewindow
@@ -26,7 +30,7 @@ using DSP.Windows: makewindow
     @test makewindow(x->42.0, 1, 2, true) ≈ [42.0, 0.0, 0.0]
 end
 
-@testset "dspss" begin
+@testset "dpss" begin
     # Test dpss against dpss computed with MATLAB
     d1 = dpss(128, 4)
     d2 = readdlm(joinpath(dirname(@__FILE__), "data", "dpss128,4.txt"), '\t')
@@ -102,9 +106,9 @@ end
     @test cosine_jl ≈ cosine_ref
 end
 
-zeroarg_wins = [rect, hanning, hamming, cosine, lanczos,
-                bartlett, bartlett_hann, blackman, triang]
-onearg_wins = [gaussian, kaiser, tukey]
+zeroarg_wins = (rect, hanning, hamming, cosine, lanczos,
+                bartlett, bartlett_hann, blackman, triang)
+onearg_wins = (gaussian, kaiser, tukey)
 @testset "zero-phase windows" begin
     for winf in zeroarg_wins
         if winf == triang
@@ -137,20 +141,20 @@ end
     # make sure return types are correct
     n = 12
     ft = typeof(1.0)
-    for W in(:rect, :hanning, :hamming, :cosine, :lanczos, :triang, :bartlett, :bartlett_hann, :blackman)
-        @eval @test Array{$ft,1} == typeof($W($n)) && length($W($n)) == $n
+    for W in zeroarg_wins
+        @test Array{ft,1} == typeof(W(n)) && length(W(n)) == n
     end
 
-    @test Array{ft,1} == typeof(tukey(n, 0.4)) && length(tukey(n, 0.4)) == n
-    @test Array{ft,1} == typeof(gaussian(n, 0.4)) && length(gaussian(n, 0.4)) == n
-    @test Array{ft,1} == typeof(kaiser(n, 0.4)) && length(kaiser(n, 0.4)) == n
-    @test Array{ft,2} == typeof(dpss(n, 1.5)) && size(dpss(n, 1.5),1) == n  # size(,2) depends on the parameters
+    @test Vector{ft} == typeof(tukey(n, 0.4)) && length(tukey(n, 0.4)) == n
+    @test Vector{ft} == typeof(gaussian(n, 0.4)) && length(gaussian(n, 0.4)) == n
+    @test Vector{ft} == typeof(kaiser(n, 0.4)) && length(kaiser(n, 0.4)) == n
+    @test Matrix{ft} == typeof(dpss(n, 1.5)) && size(dpss(n, 1.5),1) == n  # size(,2) depends on the parameters
 end
 
 @testset "tensor product windows" begin
     # test all combinations of arguments. Each arg and kwarg can be not present,
     # a single value, or a 2-tuple
-    for winf in [zeroarg_wins; onearg_wins]
+    for winf in (zeroarg_wins..., onearg_wins...)
         for arg in (nothing, 0.4, (0.4, 0.5))
             # skip invalid combinations
             winf in zeroarg_wins && arg !== nothing && continue

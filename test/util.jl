@@ -1,5 +1,14 @@
-using DSP, Test
+using Test
 using Statistics: mean
+using FFTW: fft
+using DSP.Util: hilbert, meanfreq, nextfastfft,
+    db2amp, amp2db, db2pow, pow2db, dB, dBa,
+    rms, rmsfft,
+    shiftin!,
+    finddelay,
+    shiftsignal, shiftsignal!, alignsignals, alignsignals!
+
+using DSP.Periodograms: arraysplit
 
 @testset "hilbert" begin
     # Testing hilbert transform
@@ -104,7 +113,7 @@ function _length(itr)
 end
 
 @testset "`arraysplit`" begin
-    @test collect(DSP.arraysplit(collect(1:10), 3, 1)) == [ collect(1.0:3), collect(3.0:5), collect(5.0:7), collect(7.0:9)]
+    @test collect(arraysplit(collect(1:10), 3, 1)) == [ collect(1.0:3), collect(3.0:5), collect(5.0:7), collect(7.0:9)]
 
     @testset "`arraysplit` with `n_samples`=$(n_samples), `n_samples_per_window`=$(n_samples_per_window), `n_overlap`=$(n_overlap) " for n_samples in (20:20:100), n_samples_per_window in (20:20:100), n_overlap in (0:20:(n_samples_per_window-1))
         @test _length(arraysplit(1:n_samples, n_samples_per_window, n_overlap)) == length(arraysplit(1:n_samples, n_samples_per_window, n_overlap))

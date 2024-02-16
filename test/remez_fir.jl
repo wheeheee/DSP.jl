@@ -1,5 +1,8 @@
 !(dirname(@__FILE__) in LOAD_PATH) && push!(LOAD_PATH, dirname(@__FILE__))
-using DSP, Test, DelimitedFiles, FilterTestHelpers
+using Test, FilterTestHelpers
+using DelimitedFiles: readdlm
+using DSP.Filters: freqresp, PolynomialRatio, remez,
+    filter_type_hilbert, filter_type_differentiator
 
 @testset "remez_argument_check1" begin
     # bands not monotonically increasing
@@ -175,7 +178,7 @@ end
                 (    0.0, 2880.0) => (f -> (f==0) ? 1.0 : abs.((π*f/4800) ./ sin.(π*f/4800)), 1.0),
                 (10000.0,  Fs/2) => (0.0, 100.0)
         ]; Hz=Fs)
-    g = DSP.Filters.PolynomialRatio(g_vec, [1.0])
+    g = PolynomialRatio(g_vec, [1.0])
     Gdb = 20*log10.(abs.(freqresp(g, 2π*f)))
 
     passband_indices = (f*Fs) .< 2880.0

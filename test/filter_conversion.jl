@@ -1,6 +1,13 @@
 !(dirname(@__FILE__) in LOAD_PATH) && push!(LOAD_PATH, dirname(@__FILE__))
-using DSP, Test, FilterTestHelpers, Polynomials
+using Test, FilterTestHelpers, Polynomials
 using Polynomials.PolyCompat
+using DSP.Filters: SecondOrderSections, PolynomialRatio, ZeroPoleGain, Biquad,
+    Bandpass, Bandstop, Lowpass, Highpass,
+    Butterworth, Chebyshev1, Chebyshev2, Elliptic,
+    digitalfilter,
+    coefa, coefb
+
+using DSP: filt
 
 @testset "convert to SOS" begin
     # Test conversion to SOS against MATLAB
@@ -133,7 +140,7 @@ using Polynomials.PolyCompat
     1.0000000000000000e+00  -1.9021224191804869e+00   1.0000000000000000e+00   1.0000000000000000e+00  -1.8964983429993663e+00   9.9553672990017417e-01
     1.0000000000000000e+00  -1.9021224191804869e+00   1.0000000000000000e+00   1.0000000000000000e+00  -1.8992956433548462e+00   9.9559721515078736e-01
     ]
-    f = convert(SecondOrderSections, digitalfilter(Bandstop(49.5, 50.5), DSP.Butterworth(2); fs=1000))
+    f = convert(SecondOrderSections, digitalfilter(Bandstop(49.5, 50.5), Butterworth(2); fs=1000))
     @test m_sos_butterworth_bs ≈ sosfilter_to_matrix(f)
     @test f.g ≈ 0.995566972017647
 
