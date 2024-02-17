@@ -634,31 +634,27 @@ const BoolOr2 = Union{Tuple{Bool, Bool}, Bool}
 
 for func in (:rect, :hanning, :hamming, :cosine, :lanczos,
              :triang, :bartlett, :bartlett_hann, :blackman)
-    @eval begin
-        function $func(dims::Tuple; padding::IntegerOr2=0,
+    @eval function $func(dims::Tuple; padding::IntegerOr2=0,
                                     zerophase::BoolOr2=false)
-            length(dims) == 2 || throw(ArgumentError("`dims` must be length 2"))
-            paddings = argdup(padding)
-            zerophases = argdup(zerophase)
-            w1 = $func(dims[1]; padding=paddings[1], zerophase=zerophases[1])
-            w2 = $func(dims[2]; padding=paddings[2], zerophase=zerophases[2])
-            w1 * w2'
-        end
+        length(dims) == 2 || throw(ArgumentError("`dims` must be length 2"))
+        paddings = argdup(padding)
+        zerophases = argdup(zerophase)
+        w1 = $func(dims[1]; padding=paddings[1], zerophase=zerophases[1])
+        w2 = $func(dims[2]; padding=paddings[2], zerophase=zerophases[2])
+        w1 * w2'
     end
 end
 
 for func in (:tukey, :gaussian, :kaiser)
-    @eval begin
-        function $func(dims::Tuple, arg::RealOr2;
+    @eval function $func(dims::Tuple, arg::RealOr2;
                        padding::IntegerOr2=0, zerophase::BoolOr2=false)
-            length(dims) == 2 || throw(ArgumentError("`dims` must be length 2"))
-            args = argdup(arg)
-            paddings = argdup(padding)
-            zerophases = argdup(zerophase)
-            w1 = $func(dims[1], args[1]; padding=paddings[1], zerophase=zerophases[1])
-            w2 = $func(dims[2], args[2]; padding=paddings[2], zerophase=zerophases[2])
-            w1 * w2'
-        end
+        length(dims) == 2 || throw(ArgumentError("`dims` must be length 2"))
+        args = argdup(arg)
+        paddings = argdup(padding)
+        zerophases = argdup(zerophase)
+        w1 = $func(dims[1], args[1]; padding=paddings[1], zerophase=zerophases[1])
+        w2 = $func(dims[2], args[2]; padding=paddings[2], zerophase=zerophases[2])
+        w1 * w2'
     end
 end
 
