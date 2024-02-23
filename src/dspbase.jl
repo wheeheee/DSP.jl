@@ -113,32 +113,28 @@ end
 #
 
 # Transposed direct form II
-@generated function _filt_fir!(out, b::NTuple{N,T}, x, siarr, col) where {N,T}
+@inline @generated function _filt_fir!(out::AbstractVector, b::NTuple{N,T},
+        x::AbstractVector, siarr::AbstractVector) where {N,T}
     silen = N - 1
     si_end = Symbol(:si_, silen)
-    SMALL_FILT_VECT_CUTOFF = 18
-    si_check = N > SMALL_FILT_VECT_CUTOFF ? :(nothing) : :(@assert length(siarr) == $silen)
 
     q = quote
-        $si_check
         Base.@nextract $silen si siarr
-        checkbounds(x, :, col)
-        size(x) == size(out) || throw(DimensionMismatch("size(x) != size(out)"))
-        for i in axes(x, 1)
-            xi = x[i, col]
+        for i in eachindex(x, out)
+            xi = x[i]
             val = muladd(xi, b[1], si_1)
             Base.@nexprs $(silen-1) j -> (si_j = muladd(xi, b[j+1], si_{j+1}))
             $si_end = b[N] * xi
-            out[i, col] = val
+            out[i] = val
         end
-    end
-
-    if N > SMALL_FILT_VECT_CUTOFF
-        loop_args = q.args[10].args[2].args
-        loop_args[10] = :(@inbounds $(loop_args[10]))
     end
     q
 end
+
+const SMALL_FILT_VECT_CUTOFF = 18
+# Conditionally inline `_filt_fir!`, depending on whether `bs` is <= SMALL_FILT_VECT_CUTOFF.
+# This is done for performance, and is quite brittle since it relies on auto-vectorization.
+@noinline _noinline_filt_fir!(out, b::NTuple, x, si) = _filt_fir!(out, b, x, si)
 
 # Convert array filter tap input to tuple for small-filtering
 function _small_filt_fir!(
@@ -146,10 +142,11 @@ function _small_filt_fir!(
         si::AbstractArray{S,N}, ::Val{bs}) where {S,N,bs}
 
     bs < 2 && throw(ArgumentError("invalid tuple size"))
-    b = ntuple(j -> @inbounds(h[j]), Val(bs))
-    for col in axes(x, 2)
-        v_si = view(si, :, N > 1 ? col : 1)
-        _filt_fir!(out, b, x, v_si, col)
+    b = ntuple(j -> h[j], Val(bs))
+    filt_fir_fn! = bs <= SMALL_FILT_VECT_CUTOFF ? _filt_fir! : _noinline_filt_fir!
+    @views for col in axes(x, 2)
+        v_si = si[:, N > 1 ? col : 1]
+        filt_fir_fn!(out[:, col], b, x[:, col], v_si)
     end
 end
 
