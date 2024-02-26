@@ -112,16 +112,38 @@ end
 # filt implementation for FIR filters (faster than Base)
 #
 
+### TL;DR ###
+# We multi-version the function to enhance performance on newer versions of julia
+# without introducing major performance regressions on older platforms.
+
+# While faster, this function is also a lot more finicky. Beginning from Julia v1.9,
+# @inbounds can actually dramatically reduce performance for smaller lengths of `b`,
+# because of regressions in loop and SLP vectorization. Bounds checks can also have
+# surprisingly unpredictable effects whether inside or outside of the hot loop.
+# Those in `_filt_fir!`, while valid, are performance hacks, included for their
+# side effects in Julia v1.9 and v1.10; hence, they aren't annotated with @boundscheck.
+# Running with `--check-bounds=no` may therefore not improve performance.
+
 # Transposed direct form II
 @generated function _filt_fir!(out, b::NTuple{N,T}, x, siarr, col) where {N,T}
     silen = N - 1
     si_end = Symbol(:si_, silen)
     SMALL_FILT_VECT_CUTOFF = 18
-    si_check = N > SMALL_FILT_VECT_CUTOFF ? :(nothing) : :(@assert length(siarr) == $silen)
+    @static if VERSION < v"1.8"
+        ex = :(Base.@nextract $silen si d -> @inbounds(siarr[d]))
+        si_check = :(nothing)
+    else
+        ex = :(Base.@nextract $silen si siarr)
+        if VERSION < v"1.9" || N > SMALL_FILT_VECT_CUTOFF
+            si_check = :(nothing)
+        else
+            si_check = :(checkbounds(siarr, 1:$silen))
+        end
+    end
 
     q = quote
         $si_check
-        Base.@nextract $silen si siarr
+        $ex
         checkbounds(x, :, col)
         size(x) == size(out) || throw(DimensionMismatch("size(x) != size(out)"))
         for i in axes(x, 1)
