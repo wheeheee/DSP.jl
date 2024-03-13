@@ -156,6 +156,7 @@ end
             $si_end = xi * b[N].value
             $store_out
         end
+        return Base.@ntuple $silen j -> VecElement(si_j)
     end
 end
 
