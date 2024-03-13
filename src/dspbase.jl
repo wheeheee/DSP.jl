@@ -117,18 +117,21 @@ end
         x::AbstractVector, siarr::AbstractVector) where {N,T}
     silen = N - 1
     si_end = Symbol(:si_, silen)
+    SMALL_FILT_VECT_CUTOFF = 18
+    si_check = N > SMALL_FILT_VECT_CUTOFF ? :(nothing) : :(checkbounds(siarr, 1:$silen))
 
-    q = quote
+    quote
+        $si_check
         Base.@nextract $silen si siarr
         for i in eachindex(x, out)
             xi = x[i]
-            val = muladd(xi, b[1], si_1)
-            Base.@nexprs $(silen-1) j -> (si_j = muladd(xi, b[j+1], si_{j+1}))
-            $si_end = b[N] * xi
+            val = muladd(xi, b[1].value, si_1)
+            Base.@nexprs $(silen-1) j -> (si_j = muladd(xi, b[j+1].value, si_{j+1}))
+            $si_end = b[N].value * xi
             out[i] = val
         end
+        return Base.@ntuple $silen d -> VecElement(si_d)
     end
-    q
 end
 
 const SMALL_FILT_VECT_CUTOFF = 18
@@ -142,10 +145,11 @@ function _small_filt_fir!(
         si::AbstractArray{S,N}, ::Val{bs}) where {S,N,bs}
 
     bs < 2 && throw(ArgumentError("invalid tuple size"))
-    b = ntuple(j -> h[j], Val(bs))
+    checkbounds(h, 1:bs)
+    b = ntuple(j -> VecElement(h[j]), Val(bs))
     filt_fir_fn! = bs <= SMALL_FILT_VECT_CUTOFF ? _filt_fir! : _noinline_filt_fir!
     @views for col in axes(x, 2)
-        v_si = si[:, N > 1 ? col : 1]
+        v_si = N > 1 ? si[:, col] : si
         filt_fir_fn!(out[:, col], b, x[:, col], v_si)
     end
 end
