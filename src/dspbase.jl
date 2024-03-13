@@ -126,35 +126,37 @@ end
     SMALL_FILT_VECT_CUTOFF = 18
     @static if VERSION < v"1.8"
         ex = :(Base.@nextract $silen si d -> @inbounds(siarr[d]))
-        si_check = :(nothing)
-    else
+    elseif VERSION < v"1.9"
         ex = :(Base.@nextract $silen si siarr)
-        if VERSION < v"1.9" || N > SMALL_FILT_VECT_CUTOFF
-            si_check = :(nothing)
+    else
+        if !(N > SMALL_FILT_VECT_CUTOFF)
+            ex = quote
+                checkbounds(siarr, 1:$silen)
+                Base.@nextract $silen si siarr
+            end
         else
-            si_check = :(checkbounds(siarr, 1:$silen))
+            ex = :(Base.@nextract $silen si siarr)
         end
     end
 
-    q = quote
-        $si_check
+    if N > SMALL_FILT_VECT_CUTOFF
+        store_out = :(@inbounds out[i, col] = val)
+    else
+        store_out = :(out[i, col] = val)
+    end
+
+    quote
         $ex
         checkbounds(x, :, col)
         size(x) == size(out) || throw(DimensionMismatch("size(x) != size(out)"))
         for i in axes(x, 1)
             xi = x[i, col]
-            val = muladd(xi, b[1], si_1)
-            Base.@nexprs $(silen-1) j -> (si_j = muladd(xi, b[j+1], si_{j+1}))
-            $si_end = b[N] * xi
-            out[i, col] = val
+            val = muladd(xi, b[1].value, si_1)
+            Base.@nexprs $(silen-1) j -> (si_j = muladd(xi, b[j+1].value, si_{j+1}))
+            $si_end = xi * b[N].value
+            $store_out
         end
     end
-
-    if N > SMALL_FILT_VECT_CUTOFF
-        loop_args = q.args[10].args[2].args
-        loop_args[10] = :(@inbounds $(loop_args[10]))
-    end
-    q
 end
 
 # Convert array filter tap input to tuple for small-filtering
@@ -163,7 +165,7 @@ function _small_filt_fir!(
         si::AbstractArray{S,N}, ::Val{bs}) where {S,N,bs}
 
     bs < 2 && throw(ArgumentError("invalid tuple size"))
-    b = ntuple(j -> @inbounds(h[j]), Val(bs))
+    b = ntuple(j -> VecElement(@inbounds(h[j])), Val(bs))
     for col in axes(x, 2)
         v_si = view(si, :, N > 1 ? col : 1)
         _filt_fir!(out, b, x, v_si, col)
