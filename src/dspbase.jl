@@ -648,12 +648,16 @@ function _conv_td!(out, output_indices, u::AbstractArray{<:Number, N}, v::Abstra
     checkbounds(out, output_indices)
     fill!(out, zero(eltype(out)))
     if size(u, 1) ≤ size(v, 1) # choose more efficient iteration order
-        for m in CartesianIndices(u), n in CartesianIndices(v)
-            @inbounds out[n+m - index_offset] = muladd(u[m], v[n], out[n+m - index_offset])
+        for m in CartesianIndices(u)
+            @simd for n in CartesianIndices(v)
+                @inbounds out[n+m - index_offset] = muladd(u[m], v[n], out[n+m - index_offset])
+            end
         end
     else
-        for n in CartesianIndices(v), m in CartesianIndices(u)
-            @inbounds out[n+m - index_offset] = muladd(u[m], v[n], out[n+m - index_offset])
+        for n in CartesianIndices(v)
+            @simd for m in CartesianIndices(u)
+                @inbounds out[n+m - index_offset] = muladd(u[m], v[n], out[n+m - index_offset])
+            end
         end
     end
     return out
