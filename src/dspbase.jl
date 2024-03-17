@@ -164,7 +164,8 @@ function _small_filt_fir!(
         si::AbstractArray{S,N}, ::Val{bs}) where {S,N,bs}
 
     bs < 2 && throw(ArgumentError("invalid tuple size"))
-    b = ntuple(j -> VecElement(@inbounds(h[j])), Val(bs))
+    length(h) != bs && throw(ArgumentError("length(h) does not match bs"))
+    b = ntuple(j -> VecElement(h[j]), Val(bs))
     for col in axes(x, 2)
         v_si = N > 1 ? view(si, :, col) : si
         _filt_fir!(out, b, x, v_si, col)
