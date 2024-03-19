@@ -316,8 +316,8 @@ unnormalized.
     bufsize = ntuple(i -> i == 1 ? nffts[i] >> 1 + 1 : nffts[i], N)
     fdbuff = similar(u, Complex{T}, NTuple{N, Int}(bufsize))
 
-    p = plan_rfft(tdbuff)
-    ip = plan_brfft(fdbuff, nffts[1])
+    p = plan_rfft(tdbuff; flags=FFTW.MEASURE)
+    ip = plan_brfft(fdbuff, nffts[1]; flags=FFTW.MEASURE)
 
     tdbuff, fdbuff, p, ip
 end
@@ -325,7 +325,7 @@ end
 @inline function os_prepare_conv(u::AbstractArray{<:Complex}, nffts)
     buff = similar(u, nffts)
 
-    p = plan_fft!(buff)
+    p = plan_fft!(buff; flags=FFTW.MEASURE)
     ip = inv(p).p
 
     buff, buff, p, ip # Only one buffer for complex
