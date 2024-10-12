@@ -248,8 +248,8 @@ function buttord(Wp::Tuple{Real,Real}, Ws::Tuple{Real,Real}, Rp::Real, Rs::Real;
 
     # pre-warp both components, (if Z-domain specified)
     if (domain == :z)
-        Ωp = tan.(π / 2 .* Wps)
-        Ωs = tan.(π / 2 .* Wss)
+        Ωp = tanpi.(Wps ./ 2)
+        Ωs = tanpi.(Wss ./ 2)
     else
         Ωp = Wps
         Ωs = Wss
@@ -439,7 +439,7 @@ function cheb2ord(Wp::Tuple{Real,Real}, Ws::Tuple{Real,Real}, Rp::Real, Rs::Real
     Wss = sort_W(Ws)
     (Wps[1] < Wss[1]) != (Wps[2] > Wss[2]) && throw(ArgumentError("Pass and stopband edges must be ordered for Bandpass/Bandstop filters."))
     ftype = (Wps[1] < Wss[1]) ? Bandstop : Bandpass
-    (Ωp, Ωs) = (domain == :z) ? (tan.(π / 2 .* Wps), tan.(π / 2 .* Wss)) : (Wps, Wss)
+    (Ωp, Ωs) = (domain == :z) ? (tanpi.(1 / 2 .* Wps), tanpi.(1 / 2 .* Wss)) : (Wps, Wss)
     if (ftype == Bandpass)
         prod = Ωp[1] * Ωp[2]
         diff = Ωp[1] - Ωp[2]

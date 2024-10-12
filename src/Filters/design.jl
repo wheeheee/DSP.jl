@@ -475,7 +475,7 @@ end
 prewarp(ftype::Union{Lowpass, Highpass}, fs::Real) = (typeof(ftype))(prewarp(normalize_freq(ftype.w, fs)))
 prewarp(ftype::Union{Bandpass, Bandstop}, fs::Real) = (typeof(ftype))(prewarp(normalize_freq(ftype.w1, fs)), prewarp(normalize_freq(ftype.w2, fs)))
 # freq in half-samples per cycle
-prewarp(f::Real) = 4*tan(pi*f/2)
+prewarp(f::Real) = 4 * tanpi(f / 2)
 
 # Digital filter design
 """
@@ -506,7 +506,7 @@ function iirnotch(w::Real, bandwidth::Real; fs=2)
     bandwidth = normalize_freq(bandwidth, fs)
 
     # Eq. 8.2.23
-    b = 1/(1+tan(pi*bandwidth/2))
+    b = 1 / (1 + tanpi(bandwidth / 2))
     # Eq. 8.2.22
     cosw0 = cospi(w)
     Biquad(b, -2b*cosw0, b, -2b*cosw0, 2b-1)
