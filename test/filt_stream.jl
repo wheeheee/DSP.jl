@@ -80,8 +80,8 @@ function test_singlerate(h::AbstractVector{T}, x::AbstractVector) where T
     @printfifinteractive( """\n\n
         ____ _ _  _ ____ _    ____    ____ ____ ___ ____
         [__  | |\\ | | __ |    |___    |__/ |__|  |  |___
-        ___] | | \\| |__] |___ |___    |  \\ |  |  |  |___""" )
-    @printfifinteractive( "\nTesting single-rate filtering, h::%s, x::%s. xLen = %d, hLen = %d\n", typeof(h), typeof(x), xLen, hLen )
+        ___] | | \\| |__] |___ |___    |  \\ |  |  |  |___\n\n""" )
+    @printfifinteractive( "Testing single-rate filtering, h::%s, x::%s. xLen = %d, hLen = %d\n", typeof(h), typeof(x), xLen, hLen )
 
     @printfifinteractive( "\n\tfilt\n\t\t")
     @timeifinteractive naiveResult = filt(h, one(T), x)
@@ -129,8 +129,8 @@ function test_decimation(h, x, decimation::Integer)
     @printfifinteractive( """\n\n
         ___  ____ ____ _ _  _ ____ ___ _ ____ _  _
         |  \\ |___ |    | |\\/| |__|  |  | |  | |\\ |
-        |__/ |___ |___ | |  | |  |  |  | |__| | \\|""" )
-    @printfifinteractive( "\nTesting decimation. h::%s, x::%s. xLen = %d, hLen = %d, decimation = %d\n", typeof(h), typeof(x), xLen, hLen, decimation )
+        |__/ |___ |___ | |  | |  |  |  | |__| | \\|\n\n""" )
+    @printfifinteractive( "Testing decimation. h::%s, x::%s. xLen = %d, hLen = %d, decimation = %d\n", typeof(h), typeof(x), xLen, hLen, decimation )
 
     @printfifinteractive( "\n\tNaive decimation\n\t\t")
     @timeifinteractive naiveResult = naivefilt(h, x, 1//decimation)
@@ -179,8 +179,8 @@ function test_interpolation(h::AbstractVector{T}, x::AbstractVector{V}, interpol
     @printfifinteractive( """\n\n
         _ _  _ ___ ____ ____ ___  _    ____ ____ ___ _ ____ _  _
         | |\\ |  |  |___ |__/ |__] |    |  | |__|  |  | |  | |\\ |
-        | | \\|  |  |___ |  \\ |    |___ |__| |  |  |  | |__| | \\|""" )
-    @printfifinteractive( "\nTesting interpolation, h::%s, x::%s. xLen = %d, hLen = %d, interpolation = %d\n", typeof(h), typeof(x), xLen, hLen, interpolation )
+        | | \\|  |  |___ |  \\ |    |___ |__| |  |  |  | |__| | \\|\n\n""" )
+    @printfifinteractive( "Testing interpolation, h::%s, x::%s. xLen = %d, hLen = %d, interpolation = %d\n", typeof(h), typeof(x), xLen, hLen, interpolation )
 
     @printfifinteractive( "\n\tNaive interpolation with filt\n\t\t")
     @timeifinteractive begin
@@ -242,8 +242,8 @@ function test_rational(h, x, ratio)
 
         ____ ____ ____ ____ _  _ ___  _    _ _  _ ____
         |__/ |___ [__  |__| |\\/| |__] |    | |\\ | | __
-        |  \\ |___ ___] |  | |  | |    |___ | | \\| |__]""" )
-    @printfifinteractive( "\n\nTesting rational resampling, h::%s, x::%s. xLen = %d, hLen = %d, ratio = %d//%d\n", typeof(h), typeof(x), xLen, hLen, upfactor, downfactor )
+        |  \\ |___ ___] |  | |  | |    |___ | | \\| |__]\n\n""")
+    @printfifinteractive( "Testing rational resampling, h::%s, x::%s. xLen = %d, hLen = %d, ratio = %d//%d\n", typeof(h), typeof(x), xLen, hLen, upfactor, downfactor )
 
     @printfifinteractive( "\n\tNaive rational resampling\n\t\t")
     @timeifinteractive naiveResult = naivefilt(h, x, ratio)
@@ -292,8 +292,8 @@ function test_arbitrary(Th, x, resampleRate, numFilters::Integer)
     @printfifinteractive("""\n\n
         ____ ____ ___      ____ ____ ____ ____ _  _ ___  _    _ _  _ ____
         |__| |__/ |__]     |__/ |___ [__  |__| |\\/| |__] |    | |\\ | | __
-        |  | |  \\ |__] .   |  \\ |___ ___] |  | |  | |    |___ | | \\| |__]""")
-    @printfifinteractive( "\nh::%s, x::%s, rate = %f, Nϕ = %d, xLen = %d\n", typeof(h), typeof(x), resampleRate, numFilters, xLen )
+        |  | |  \\ |__] .   |  \\ |___ ___] |  | |  | |    |___ | | \\| |__]\n\n""")
+    @printfifinteractive( "h::%s, x::%s, rate = %f, Nϕ = %d, xLen = %d\n", typeof(h), typeof(x), resampleRate, numFilters, xLen )
 
     @printfifinteractive( "\n\tNaive arbitrary resampling\n\t\t" )
     @timeifinteractive naiveResult = naivefilt(h, x, resampleRate, numFilters)
