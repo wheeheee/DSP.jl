@@ -77,10 +77,10 @@ function test_singlerate(h::AbstractVector{T}, x::AbstractVector) where T
     x1         = x[1:pivotPoint]
     x2         = x[pivotPoint+1:end]
 
-    @printfifinteractive( "\n\n" )
-    @printfifinteractive( "____ _ _  _ ____ _    ____    ____ ____ ___ ____\n" )
-    @printfifinteractive( "[__  | |\\ | | __ |    |___    |__/ |__|  |  |___\n" )
-    @printfifinteractive( "___] | | \\| |__] |___ |___    |  \\ |  |  |  |___\n" )
+    @printfifinteractive( """\n\n
+        ____ _ _  _ ____ _    ____    ____ ____ ___ ____
+        [__  | |\\ | | __ |    |___    |__/ |__|  |  |___
+        ___] | | \\| |__] |___ |___    |  \\ |  |  |  |___""" )
     @printfifinteractive( "\nTesting single-rate filtering, h::%s, x::%s. xLen = %d, hLen = %d\n", typeof(h), typeof(x), xLen, hLen )
 
     @printfifinteractive( "\n\tfilt\n\t\t")
@@ -126,10 +126,10 @@ function test_decimation(h, x, decimation::Integer)
     x1         = x[1:pivotPoint]
     x2         = x[pivotPoint+1:end]
 
-    @printfifinteractive( "\n\n" )
-    @printfifinteractive( "___  ____ ____ _ _  _ ____ ___ _ ____ _  _ \n" )
-    @printfifinteractive( "|  \\ |___ |    | |\\/| |__|  |  | |  | |\\ | \n" )
-    @printfifinteractive( "|__/ |___ |___ | |  | |  |  |  | |__| | \\| \n" )
+    @printfifinteractive( """\n\n
+        ___  ____ ____ _ _  _ ____ ___ _ ____ _  _
+        |  \\ |___ |    | |\\/| |__|  |  | |  | |\\ |
+        |__/ |___ |___ | |  | |  |  |  | |__| | \\|""" )
     @printfifinteractive( "\nTesting decimation. h::%s, x::%s. xLen = %d, hLen = %d, decimation = %d\n", typeof(h), typeof(x), xLen, hLen, decimation )
 
     @printfifinteractive( "\n\tNaive decimation\n\t\t")
@@ -176,10 +176,10 @@ function test_interpolation(h::AbstractVector{T}, x::AbstractVector{V}, interpol
     x1         = x[1:pivotPoint]
     x2         = x[pivotPoint+1:end]
 
-    @printfifinteractive( "\n\n" )
-    @printfifinteractive( "_ _  _ ___ ____ ____ ___  _    ____ ____ ___ _ ____ _  _ \n" )
-    @printfifinteractive( "| |\\ |  |  |___ |__/ |__] |    |  | |__|  |  | |  | |\\ | \n" )
-    @printfifinteractive( "| | \\|  |  |___ |  \\ |    |___ |__| |  |  |  | |__| | \\| \n" )
+    @printfifinteractive( """\n\n
+        _ _  _ ___ ____ ____ ___  _    ____ ____ ___ _ ____ _  _
+        | |\\ |  |  |___ |__/ |__] |    |  | |__|  |  | |  | |\\ |
+        | | \\|  |  |___ |  \\ |    |___ |__| |  |  |  | |__| | \\|""" )
     @printfifinteractive( "\nTesting interpolation, h::%s, x::%s. xLen = %d, hLen = %d, interpolation = %d\n", typeof(h), typeof(x), xLen, hLen, interpolation )
 
     @printfifinteractive( "\n\tNaive interpolation with filt\n\t\t")
@@ -235,14 +235,14 @@ function test_rational(h, x, ratio)
     downfactor = denominator(ratio)
     resultType = promote_type(eltype(h), eltype(x))
 
-    @printfifinteractive( "\n\n" )
-    @printfifinteractive( "      ____ ____ ___ _ ____ _  _ ____ _    \n" )
-    @printfifinteractive( "      |__/ |__|  |  | |  | |\\ | |__| |    \n" )
-    @printfifinteractive( "      |  \\ |  |  |  | |__| | \\| |  | |___ \n" )
-    @printfifinteractive( "                                          \n" )
-    @printfifinteractive( "____ ____ ____ ____ _  _ ___  _    _ _  _ ____\n" )
-    @printfifinteractive( "|__/ |___ [__  |__| |\\/| |__] |    | |\\ | | __\n" )
-    @printfifinteractive( "|  \\ |___ ___] |  | |  | |    |___ | | \\| |__]\n" )
+    @printfifinteractive( """\n\n
+              ____ ____ ___ _ ____ _  _ ____ _
+              |__/ |__|  |  | |  | |\\ | |__| |
+              |  \\ |  |  |  | |__| | \\| |  | |___
+
+        ____ ____ ____ ____ _  _ ___  _    _ _  _ ____
+        |__/ |___ [__  |__| |\\/| |__] |    | |\\ | | __
+        |  \\ |___ ___] |  | |  | |    |___ | | \\| |__]""" )
     @printfifinteractive( "\n\nTesting rational resampling, h::%s, x::%s. xLen = %d, hLen = %d, ratio = %d//%d\n", typeof(h), typeof(x), xLen, hLen, upfactor, downfactor )
 
     @printfifinteractive( "\n\tNaive rational resampling\n\t\t")
@@ -289,10 +289,10 @@ function test_arbitrary(Th, x, resampleRate, numFilters::Integer)
     myfilt          = FIRFilter(h, resampleRate, numFilters)
     xLen            = length(x)
 
-    @printfifinteractive("\n\n")
-    @printfifinteractive( "____ ____ ___      ____ ____ ____ ____ _  _ ___  _    _ _  _ ____\n" )
-    @printfifinteractive( "|__| |__/ |__]     |__/ |___ [__  |__| |\\/| |__] |    | |\\ | | __\n" )
-    @printfifinteractive( "|  | |  \\ |__] .   |  \\ |___ ___] |  | |  | |    |___ | | \\| |__]\n" )
+    @printfifinteractive("""\n\n
+        ____ ____ ___      ____ ____ ____ ____ _  _ ___  _    _ _  _ ____
+        |__| |__/ |__]     |__/ |___ [__  |__| |\\/| |__] |    | |\\ | | __
+        |  | |  \\ |__] .   |  \\ |___ ___] |  | |  | |    |___ | | \\| |__]""")
     @printfifinteractive( "\nh::%s, x::%s, rate = %f, Nϕ = %d, xLen = %d\n", typeof(h), typeof(x), resampleRate, numFilters, xLen )
 
     @printfifinteractive( "\n\tNaive arbitrary resampling\n\t\t" )
