@@ -407,7 +407,7 @@ function transform_prototype(ftype::Bandstop, proto::ZeroPoleGain{:s})
         newp[2i] = b + pm
     end
 
-    # Any emaining poles/zeros are real and not cancelled
+    # Any remaining poles/zeros are real and not cancelled
     npm = sqrt(-complex(ftype.w2 * ftype.w1))
     for (n, newc) in ((np, newp), (nz, newz))
         for i = n+1:npairs
@@ -476,8 +476,8 @@ function bilinear(f::ZeroPoleGain{:s,Z,P,K}, fs::Real) where {Z,P,K}
     ztype = typeof(0 + zero(Z)/fs)
     z = fill(convert(ztype, -1), max(length(f.p), length(f.z)))
 
-    ptype = typeof(0 + zero(P)/fs)
-    p = Vector{typeof(zero(P)/fs)}(undef, length(f.p))
+    ptype = typeof(0 + zero(P) / fs)
+    p = Vector{ptype}(undef, length(f.p))
 
     num = one(one(fs) - one(Z))
     for i = 1:length(f.z)
@@ -500,7 +500,7 @@ prewarp(ftype::Highpass, fs::Real) = Highpass(prewarp(normalize_freq(ftype.w, fs
 prewarp(ftype::Bandpass, fs::Real) = Bandpass(prewarp(normalize_freq(ftype.w1, fs)), prewarp(normalize_freq(ftype.w2, fs)))
 prewarp(ftype::Bandstop, fs::Real) = Bandstop(prewarp(normalize_freq(ftype.w1, fs)), prewarp(normalize_freq(ftype.w2, fs)))
 # freq in half-samples per cycle
-prewarp(f::Real) = 4*tan(pi*f/2)
+prewarp(f::Real) = 4 * tanpi(f / 2)
 
 # Digital filter design
 """
@@ -531,10 +531,11 @@ function iirnotch(w::Real, bandwidth::Real; fs=2)
     bandwidth = normalize_freq(bandwidth, fs)
 
     # Eq. 8.2.23
-    b = 1/(1+tan(pi*bandwidth/2))
+    b = 1 / (1 + tanpi(bandwidth / 2))
     # Eq. 8.2.22
     cosw0 = cospi(w)
-    Biquad(b, -2b*cosw0, b, -2b*cosw0, 2b-1)
+    b1 = -2b * cosw0
+    Biquad(b, b1, b, b1, 2b-1)
 end
 
 #
