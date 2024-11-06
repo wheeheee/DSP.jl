@@ -661,7 +661,7 @@ end
 
 # whether the given axis are to be considered to carry an offset for `conv!` and `conv`
 conv_with_offset(::Base.OneTo) = false
-conv_with_offset(a::Any) = throw(ArgumentError("unsupported axis type $(typeof(a))"))
+conv_with_offset(a::Any) = throw(ArgumentError(lazy"unsupported axis type $(typeof(a))"))
 
 const FFTTypes = Union{Float32, Float64, ComplexF32, ComplexF64}
 
