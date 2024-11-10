@@ -624,7 +624,7 @@ function _conv_kern_fft!(out::AbstractArray{T, N},
     copyto!(out,
             output_indices,
             raw_out,
-            CartesianIndices(UnitRange.(1, outsize)))
+            CartesianIndices(outsize))
 end
 function _conv_kern_fft!(out::AbstractArray{T}, output_indices, u, v) where {T}
     outsize = size(output_indices)
@@ -640,7 +640,7 @@ function _conv_kern_fft!(out::AbstractArray{T}, output_indices, u, v) where {T}
     copyto!(out,
             output_indices,
             upad,
-            CartesianIndices(UnitRange.(1, outsize)))
+            CartesianIndices(outsize))
 end
 
 function _conv_td!(out, output_indices, u::AbstractArray{<:Number, N}, v::AbstractArray{<:Number, N}) where {N}
