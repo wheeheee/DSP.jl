@@ -662,6 +662,20 @@ end
 # whether the given axis are to be considered to carry an offset for `conv!` and `conv`
 conv_with_offset(::Base.OneTo) = false
 conv_with_offset(a::Any) = throw(ArgumentError(lazy"unsupported axis type $(typeof(a))"))
+conv_with_offset(t::Tuple) = any(conv_with_offset, t)
+
+function calc_output_inds(ao, au, av)
+    input_has_offset = conv_with_offset(au) || conv_with_offset(av)
+    if input_has_offset !== conv_with_offset(ao)
+        throw(ArgumentError("output must have offset axes if and only if the input has"))
+    end
+    offset = input_has_offset ? 0 : 1
+    oinds = @. UnitRange{Int}(first(au) + first(av) - offset, last(au) + last(av) - offset)
+    return CartesianIndices(oinds)
+end
+
+calc_output_inds(::T, au::T, av::T) where {N,T<:NTuple{N,Base.OneTo}} =
+    CartesianIndices(length.(au) .+ length.(av) .- 1)
 
 const FFTTypes = Union{Float32, Float64, ComplexF32, ComplexF64}
 
@@ -704,33 +718,26 @@ function conv!(
     v::AbstractArray{<:Number, N};
     algorithm=:auto
 ) where {T<:Number, N}
-    output_indices = CartesianIndices(map(axes(out), axes(u), axes(v)) do ao, au, av
-        input_has_offset = conv_with_offset(au) || conv_with_offset(av)
-        if input_has_offset !== conv_with_offset(ao)
-            throw(ArgumentError("output must have offset axes if and only if the input has"))
-        end
-        offset = input_has_offset ? 0 : 1
-        return (first(au)+first(av) : last(au)+last(av)) .- offset
-    end)
+    output_indices = calc_output_inds(axes.((out, u, v))...)
 
-    if algorithm===:auto
+    if algorithm === :auto
         algorithm = T <: FFTTypes ? :fast : :direct
     end
-    if algorithm===:fast
+    if algorithm === :fast
         if length(u) * length(v) < 2^16 # TODO: better heuristic
             algorithm = :direct
         else
             algorithm = :fft
         end
     end
-    if algorithm===:direct
+    if algorithm === :direct
         return _conv_td!(out, output_indices, u, v)
     else
         if output_indices != CartesianIndices(out)
             fill!(out, zero(eltype(out)))
         end
         os_nffts = length(u) >= length(v) ? map(optimalfftfiltlength, size(v), size(u)) : map(optimalfftfiltlength, size(u), size(v))
-        if algorithm===:fft
+        if algorithm === :fft
             if any(os_nffts .< size(output_indices))
                 algorithm = :fft_overlapsave
             else
