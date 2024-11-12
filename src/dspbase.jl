@@ -798,7 +798,7 @@ function conv(u::AbstractVector{T}, v::Transpose{T,<:AbstractVector}, A::Abstrac
     m = length(u) + size(A, 1) - 1
     n = length(v) + size(A, 2) - 1
     B = zeros(T, m, n)
-    B[1:size(A, 1), 1:size(A, 2)] = A
+    B[CartesianIndices(A)] = A
     u, v = fft.(_zeropad.((u, transpose(v)), (m, n)))
     p = plan_fft(B)
     C = inv(p) * ((p * B) .*= u .* transpose(v))
