@@ -809,8 +809,8 @@ function conv(u::AbstractVector{T}, v::Transpose{T,<:AbstractVector}, A::Abstrac
 end
 
 
-dsp_reverse(v, ::NTuple{<:Any, Base.OneTo{Int}}) = reverse(v, dims = 1)
-function dsp_reverse(v, vaxes)
+dsp_reverse(v::AbstractVector, ::Tuple{Base.OneTo{<:Integer}}) = reverse(v)
+function dsp_reverse(v::AbstractVector, vaxes::Tuple{AbstractUnitRange})
     vsize = length(v)
     reflected_start = - first(vaxes[1]) - vsize + 1
     reflected_axes = (reflected_start : reflected_start + vsize - 1,)
@@ -853,32 +853,61 @@ julia> xcorr([1,2,3],[1,2,3])
 function xcorr(
     u::AbstractVector, v::AbstractVector; padmode::Symbol=:none, scaling::Symbol=:none
 )
-    su = size(u, 1); sv = size(v, 1)
+    su, sv = length(u), length(v)
 
-    if scaling == :biased && su != sv
-        throw(DimensionMismatch("scaling only valid for vectors of same length"))
+    if scaling === :biased
+        if su != sv
+            throw(DimensionMismatch("scaling only valid for vectors of same length"))
+        end
+    elseif scaling !== :none
+        throw(ArgumentError("scaling keyword argument must be either :none or :biased"))
     end
 
-    if padmode == :longest
+    if padmode === :longest
         if su < sv
             u = _zeropad_keep_offset(u, sv)
         elseif sv < su
             v = _zeropad_keep_offset(v, su)
         end
-    elseif padmode != :none
+    elseif padmode !== :none
         throw(ArgumentError("padmode keyword argument must be either :none or :longest"))
     end
 
-    res = conv(u, dsp_reverse(conj(v), axes(v)))
-    if scaling == :biased
+    if eltype(u) <: FFTTypes && u === v
+        if length(u) < 768
+            res = conv(u, conj!(dsp_reverse(v, axes(v))); algorithm=:direct)
+        else
+            res = autocorr_fft(u)
+        end
+    else
+        res = conv(u, conj!(dsp_reverse(v, axes(v))))
+    end
+
+    if scaling === :biased
         res = _normalize!(res, su)
     end
 
     return res
 end
 
+function _autocorr_fft(u::AbstractVector{T}) where T<:FFTTypes
+    forward = T <: Complex ? plan_fft! : plan_rfft
+    padLen = nextfastfft(2length(u) - 1)
+    padded = copyto!(zeros(T, padLen), u)
+    plan = forward(padded)
+    F_padded = plan * padded
+    pow_Fu = map!(abs2, F_padded, F_padded)
+    unshifted = mul!(padded, inv(plan), pow_Fu)
+    return unshifted
+end
+
+function autocorr_fft(u::AbstractVector)
+    unshifted = @inline _autocorr_fft(u)
+    shifted = circshift(unshifted, length(u) - 1)
+    return resize!(shifted, 2length(u) - 1)
+end
+
 _normalize!(x::AbstractArray{<:Integer}, sz::Int) = (x ./ sz)   # does not mutate x
 _normalize!(x::AbstractArray, sz::Int) = (x ./= sz)
 
-# TODO: write specialized (r/)fft-ed autocorrelation functions
 xcorr(u::AbstractVector; kwargs...) = xcorr(u, u; kwargs...)
