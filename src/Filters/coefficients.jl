@@ -58,7 +58,9 @@ end
 
 function shiftpoly(p::LaurentPolynomial{T,D}, i::Integer) where {T<:Number,D}
     if !iszero(i)
-        return p * LaurentPolynomial{T,D}([one(T)], i)
+        p = copy(p)
+        p.order[] += i
+        return p
     end
     return p
 end
@@ -192,8 +194,8 @@ function Base.:^(f::PolynomialRatio{D,T}, e::Integer) where {D,T}
     return PolynomialRatio{D}(b, a)
 end
 
-coef_s(p::LaurentPolynomial) = p[end:-1:0]
-coef_z(p::LaurentPolynomial) = p[0:-1:begin]
+coef_s(p::LaurentPolynomial{T}) where T = copyto!(zeros(T, lastindex(p) + 1), 1, Iterators.reverse(p.coeffs))
+coef_z(p::LaurentPolynomial{T}) where T = copyto!(zeros(T, 1 - firstindex(p)), 1 - lastindex(p), Iterators.reverse(p.coeffs))
 
 """
     coefb(f::PolynomialRatio)
