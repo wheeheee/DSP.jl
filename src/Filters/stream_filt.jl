@@ -3,7 +3,7 @@ const PFB{T} = Matrix{T}          # polyphase filter bank
 abstract type FIRKernel{T} end
 
 # Single rate FIR kernel
-mutable struct FIRStandard{T} <: FIRKernel{T}
+struct FIRStandard{T} <: FIRKernel{T}
     h::Vector{T}
     hLen::Int
 end
@@ -17,13 +17,13 @@ end
 
 # Interpolator FIR kernel
 mutable struct FIRInterpolator{T} <: FIRKernel{T}
-    pfb::PFB{T}
-    interpolation::Int
-    Nϕ::Int
-    tapsPerϕ::Int
+    const pfb::PFB{T}
+    const interpolation::Int
+    const Nϕ::Int
+    const tapsPerϕ::Int
+    const hLen::Int
     inputDeficit::Int
     ϕIdx::Int
-    hLen::Int
 end
 
 function FIRInterpolator(h::Vector, interpolation::Integer)
@@ -34,15 +34,15 @@ function FIRInterpolator(h::Vector, interpolation::Integer)
     ϕIdx          = 1
     hLen          = length(h)
 
-    FIRInterpolator(pfb, interpolation, Nϕ, tapsPerϕ, inputDeficit, ϕIdx,   hLen)
+    FIRInterpolator(pfb, interpolation, Nϕ, tapsPerϕ, hLen, inputDeficit, ϕIdx)
 end
 
 
 # Decimator FIR kernel
 mutable struct FIRDecimator{T} <: FIRKernel{T}
-    h::Vector{T}
-    hLen::Int
-    decimation::Int
+    const h::Vector{T}
+    const hLen::Int
+    const decimation::Int
     inputDeficit::Int
 end
 
@@ -56,14 +56,14 @@ end
 
 # Rational resampler FIR kernel
 mutable struct FIRRational{T}  <: FIRKernel{T}
-    pfb::PFB{T}
-    ratio::Rational{Int}
-    Nϕ::Int
-    ϕIdxStepSize::Int
-    tapsPerϕ::Int
+    const pfb::PFB{T}
+    const ratio::Rational{Int}
+    const Nϕ::Int
+    const ϕIdxStepSize::Int
+    const tapsPerϕ::Int
+    const hLen::Int
     ϕIdx::Int
     inputDeficit::Int
-    hLen::Int
 end
 
 function FIRRational(h::Vector, ratio::Rational)
@@ -73,10 +73,10 @@ function FIRRational(h::Vector, ratio::Rational)
     ϕIdx         = 1
     inputDeficit = 1
     hLen         = length(h)
-    FIRRational(pfb, ratio, Nϕ, ϕIdxStepSize, tapsPerϕ, ϕIdx, inputDeficit, hLen)
+    FIRRational(pfb, ratio, Nϕ, ϕIdxStepSize, tapsPerϕ, hLen, ϕIdx, inputDeficit)
 end
 
-FIRRational(h::Vector,ratio::Integer)=FIRRational(h,convert(Rational,ratio))
+FIRRational(h::Vector, ratio::Integer) = FIRRational(h, convert(Rational, ratio))
 
 #
 # Arbitrary resampler FIR kernel
