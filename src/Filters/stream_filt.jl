@@ -90,18 +90,18 @@ FIRRational(h::Vector,ratio::Integer)=FIRRational(h,convert(Rational,ratio))
 # See section 7.6.1 in [1] for a better explanation.
 
 mutable struct FIRArbitrary{T} <: FIRKernel{T}
-    rate::Float64
-    pfb::PFB{T}
-    dpfb::PFB{T}
-    Nϕ::Int
-    tapsPerϕ::Int
+    const rate::Float64
+    const pfb::PFB{T}
+    const dpfb::PFB{T}
+    const Nϕ::Int
+    const tapsPerϕ::Int
     ϕAccumulator::Float64
     ϕIdx::Int
     α::Float64
-    Δ::Float64
+    const Δ::Float64
     inputDeficit::Int
     xIdx::Int
-    hLen::Int
+    const hLen::Int
 end
 
 function FIRArbitrary(h::Vector, rate_in::Real, Nϕ_in::Integer)
@@ -195,9 +195,9 @@ function FIRFilter(h::Vector, rate::AbstractFloat, Nϕ::Integer=32)
 end
 
 # Constructor for a resampling FIR filter, where the user needs only to set the sampling rate
-function FIRFilter(rate::AbstractFloat, Nϕ::Integer=32)
-    h = resample_filter(rate, Nϕ)
-    FIRFilter(h, rate)
+function FIRFilter(rate::AbstractFloat, Nϕ::Integer=32, args...)
+    h = resample_filter(rate, Nϕ, args...)
+    FIRFilter(h, rate, Nϕ)
 end
 
 function FIRFilter(rate::Union{Integer,Rational})
@@ -297,7 +297,7 @@ function taps2pfb(h::Vector{T}, Nϕ::Integer) where T
 
     for rowIdx in tapsPerϕ:-1:1, colIdx in 1:Nϕ
         tap = hIdx > hLen ? zero(T) : h[hIdx]
-        @inbounds pfb[rowIdx,colIdx] = tap
+        pfb[rowIdx, colIdx] = tap
         hIdx += 1
     end
 
@@ -692,7 +692,7 @@ function resample(x::AbstractVector, rate::Real, h::Vector)
     setphase!(self, τ)
 
     # Calculate the number of 0's required
-    outLen      = ceil(Int, length(x)*rate)
+    outLen      = ceil(Int, length(x) * rate)
     reqInlen    = inputlength(self, outLen, RoundUp)
     reqZerosLen = reqInlen - length(x)
     xPadded     = [x; zeros(eltype(x), reqZerosLen)]
