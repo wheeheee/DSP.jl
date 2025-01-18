@@ -3,7 +3,7 @@ const PFB{T} = Matrix{T}          # polyphase filter bank
 abstract type FIRKernel{T} end
 
 # Single rate FIR kernel
-mutable struct FIRStandard{T} <: FIRKernel{T}
+struct FIRStandard{T} <: FIRKernel{T}
     h::Vector{T}
     hLen::Int
 end
@@ -17,13 +17,13 @@ end
 
 # Interpolator FIR kernel
 mutable struct FIRInterpolator{T} <: FIRKernel{T}
-    pfb::PFB{T}
-    interpolation::Int
-    Nϕ::Int
-    tapsPerϕ::Int
+    const pfb::PFB{T}
+    const interpolation::Int
+    const Nϕ::Int
+    const tapsPerϕ::Int
+    const hLen::Int
     inputDeficit::Int
     ϕIdx::Int
-    hLen::Int
 end
 
 function FIRInterpolator(h::Vector, interpolation::Integer)
@@ -34,15 +34,15 @@ function FIRInterpolator(h::Vector, interpolation::Integer)
     ϕIdx          = 1
     hLen          = length(h)
 
-    FIRInterpolator(pfb, interpolation, Nϕ, tapsPerϕ, inputDeficit, ϕIdx,   hLen)
+    FIRInterpolator(pfb, interpolation, Nϕ, tapsPerϕ, hLen, inputDeficit, ϕIdx)
 end
 
 
 # Decimator FIR kernel
 mutable struct FIRDecimator{T} <: FIRKernel{T}
-    h::Vector{T}
-    hLen::Int
-    decimation::Int
+    const h::Vector{T}
+    const hLen::Int
+    const decimation::Int
     inputDeficit::Int
 end
 
@@ -56,14 +56,14 @@ end
 
 # Rational resampler FIR kernel
 mutable struct FIRRational{T}  <: FIRKernel{T}
-    pfb::PFB{T}
-    ratio::Rational{Int}
-    Nϕ::Int
-    ϕIdxStepSize::Int
-    tapsPerϕ::Int
+    const pfb::PFB{T}
+    const ratio::Rational{Int}
+    const Nϕ::Int
+    const ϕIdxStepSize::Int
+    const tapsPerϕ::Int
+    const hLen::Int
     ϕIdx::Int
     inputDeficit::Int
-    hLen::Int
 end
 
 function FIRRational(h::Vector, ratio::Rational)
@@ -73,10 +73,10 @@ function FIRRational(h::Vector, ratio::Rational)
     ϕIdx         = 1
     inputDeficit = 1
     hLen         = length(h)
-    FIRRational(pfb, ratio, Nϕ, ϕIdxStepSize, tapsPerϕ, ϕIdx, inputDeficit, hLen)
+    FIRRational(pfb, ratio, Nϕ, ϕIdxStepSize, tapsPerϕ, hLen, ϕIdx, inputDeficit)
 end
 
-FIRRational(h::Vector,ratio::Integer)=FIRRational(h,convert(Rational,ratio))
+FIRRational(h::Vector, ratio::Integer) = FIRRational(h, convert(Rational, ratio))
 
 #
 # Arbitrary resampler FIR kernel
@@ -90,18 +90,18 @@ FIRRational(h::Vector,ratio::Integer)=FIRRational(h,convert(Rational,ratio))
 # See section 7.6.1 in [1] for a better explanation.
 
 mutable struct FIRArbitrary{T} <: FIRKernel{T}
-    rate::Float64
-    pfb::PFB{T}
-    dpfb::PFB{T}
-    Nϕ::Int
-    tapsPerϕ::Int
+    const rate::Float64
+    const pfb::PFB{T}
+    const dpfb::PFB{T}
+    const Nϕ::Int
+    const tapsPerϕ::Int
     ϕAccumulator::Float64
     ϕIdx::Int
     α::Float64
-    Δ::Float64
+    const Δ::Float64
     inputDeficit::Int
     xIdx::Int
-    hLen::Int
+    const hLen::Int
 end
 
 function FIRArbitrary(h::Vector, rate_in::Real, Nϕ_in::Integer)
@@ -195,9 +195,9 @@ function FIRFilter(h::Vector, rate::AbstractFloat, Nϕ::Integer=32)
 end
 
 # Constructor for a resampling FIR filter, where the user needs only to set the sampling rate
-function FIRFilter(rate::AbstractFloat, Nϕ::Integer=32)
-    h = resample_filter(rate, Nϕ)
-    FIRFilter(h, rate)
+function FIRFilter(rate::AbstractFloat, Nϕ::Integer=32, args...)
+    h = resample_filter(rate, Nϕ, args...)
+    FIRFilter(h, rate, Nϕ)
 end
 
 function FIRFilter(rate::Union{Integer,Rational})
@@ -297,7 +297,7 @@ function taps2pfb(h::Vector{T}, Nϕ::Integer) where T
 
     for rowIdx in tapsPerϕ:-1:1, colIdx in 1:Nϕ
         tap = hIdx > hLen ? zero(T) : h[hIdx]
-        @inbounds pfb[rowIdx,colIdx] = tap
+        pfb[rowIdx, colIdx] = tap
         hIdx += 1
     end
 
@@ -692,7 +692,7 @@ function resample(x::AbstractVector, rate::Real, h::Vector)
     setphase!(self, τ)
 
     # Calculate the number of 0's required
-    outLen      = ceil(Int, length(x)*rate)
+    outLen      = ceil(Int, length(x) * rate)
     reqInlen    = inputlength(self, outLen, RoundUp)
     reqZerosLen = reqInlen - length(x)
     xPadded     = [x; zeros(eltype(x), reqZerosLen)]
