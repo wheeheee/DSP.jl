@@ -49,7 +49,6 @@ struct ArraySplit{T<:AbstractVector,S,W} <: AbstractVector{Vector{S}}
         new{Ti,Si,Wi}(s, buffer, n, noverlap, window, length(s) >= n ? div((length(s) - n),
             n - noverlap) + 1 : 0)
     end
-
 end
 ArraySplit(s::T, n, noverlap, nfft, window::W; kwargs...) where {S,T<:AbstractVector{S},W} =
     ArraySplit{T,fftintype(S),W}(s, n, noverlap, nfft, window; kwargs...)
@@ -139,7 +138,7 @@ Base.collect(x::ArraySplit) = collect(copy(a) for a in x)
 ## UTILITY FUNCTIONS
 
 # Convert the output of an FFT to a PSD and add it to out
-function fft2pow!(out::AbstractArray{T}, s_fft::AbstractVector{Complex{T}}, nfft::Int, r::Real, onesided::Bool, offset::Int=0) where T
+function fft2pow!(out::AbstractVecOrMat{T}, s_fft::AbstractVector{Complex{T}}, nfft::Int, r::Real, onesided::Bool, offset::Int=0) where T
     m1 = convert(T, 1/r)
     n = length(s_fft)
     if onesided
@@ -180,22 +179,23 @@ function fft2pow2!(out::Matrix{T}, s_fft::Matrix{Complex{T}}, r::Real) where T
     out
 end
 # Convert the output of a 2-d FFT to a radial PSD and add it to out
-function fft2pow2radial!(out::Array{T}, s_fft::Matrix{Complex{T}}, n1::Int, n2::Int, r::Real, ptype::Int) where T
+function fft2pow2radial!(out::Vector{T}, s_fft::Matrix{Complex{T}}, n1::Int, n2::Int, r::Real, ptype::Int) where T
     nmin = min(n1, n2)
     n1max = n1 >> 1 + 1  # since rfft is used
     n1max != size(s_fft, 1) && throw(ArgumentError("fft size incorrect"))
     m1 = convert(T, 1/r)
     m2 = convert(T, 2/r)
-    wavenum = 0          # wavenumber index
-    kmax = length(out)   # the highest wavenumber
-    wc = zeros(Int, kmax) # wave count for radial average
-    if n1 == nmin        # scale the wavevector for non-square s_fft
+    wavenum = 0             # wavenumber index
+    kmax = length(out)      # the highest wavenumber
+    wc = zeros(Int, kmax)   # wave count for radial average
+    if n1 == nmin           # scale the wavevector for non-square s_fft
         c2 = n1/n2
         c1 = one(c2)
     else
         c1 = n2/n1
         c2 = one(c1)
     end
+    d1, d2 = iseven(n1) ? (m1, 1) : (m2, 2)
 
     sqrt_muladd(a, k) = sqrt(muladd(a, a, k))
 
@@ -218,8 +218,8 @@ function fft2pow2radial!(out::Array{T}, s_fft::Matrix{Complex{T}}, n1::Int, n2::
             end
             wavenum = round(Int, sqrt_muladd(c1 * (n1max - 1), kj2)) + 1
             if wavenum<=kmax
-                out[wavenum] = muladd(abs2(s_fft[n1max, j]), ifelse(iseven(n1), m1, m2), out[wavenum])
-                wc[wavenum] += ifelse(iseven(n1), 1, 2)
+                out[wavenum] = muladd(abs2(s_fft[n1max, j]), d1, out[wavenum])
+                wc[wavenum] += d2
             end
         end
     end
@@ -231,7 +231,7 @@ function fft2pow2radial!(out::Array{T}, s_fft::Matrix{Complex{T}}, n1::Int, n2::
     out
 end
 
-function fft2oneortwosided!(out::Array{Complex{T}}, s_fft::Vector{Complex{T}}, nfft::Int, onesided::Bool, offset::Int=0) where T
+function fft2oneortwosided!(out::Matrix{V}, s_fft::Vector{V}, nfft::Int, onesided::Bool, offset::Int=0) where V <: Complex
     n = length(s_fft)
     copyto!(out, offset+1, s_fft, 1, n)
     if !onesided && n != nfft
@@ -557,9 +557,11 @@ julia> wconfig1 = WelchConfig(x; n=length(x), noverlap=0, window=hanning, nfft=1
 julia> wconfig2 = WelchConfig(8, Float64; n=length(x), noverlap=0, window=hanning, nfft=16);
 ```
 """
-function WelchConfig(nsamples, ::Type{T}; n::Int=nsamples >> 3, noverlap::Int=n >> 1,
+function WelchConfig(nsamples::Integer, ::Type{T};
+    n::Int=Int(nsamples >> 3), noverlap::Int=Int(n >> 1),
     onesided::Bool=T <: Real, nfft::Int=nextfastfft(n),
-    fs::Real=1, window::Union{Function,AbstractVector,Nothing}=welch_config_default_window()) where T
+    fs::Real=1, window::Union{Function,AbstractVector,Nothing}=welch_config_default_window()
+) where T
 
     onesided && T <: Complex && throw(ArgumentError("cannot compute one-sided FFT of a complex signal"))
     nfft >= n || throw(DomainError((; nfft, n), "nfft must be >= n"))
@@ -743,7 +745,7 @@ function welch_pgram!(out::AbstractVector, s::AbstractVector{T}, config::WelchCo
     welch_pgram_helper!(out, s, config)
 end
 
-function welch_pgram_helper!(out, s, config)
+function welch_pgram_helper!(out::AbstractVector, s::AbstractVector, config::WelchConfig)
     fill!(out, 0)
     sig_split = arraysplit(s, config.nsamples, config.noverlap, config.nfft, config.window;
                            buffer=config.inbuf)
@@ -878,7 +880,7 @@ function stft(s::AbstractVector{T}, n::Int=length(s)>>3, noverlap::Int=n>>1,
     win, norm2 = compute_window(window, n)
     sig_split = arraysplit(s, n, noverlap, nfft, win)
     nout = onesided ? (nfft >> 1)+1 : nfft
-    out = zeros(stfttype(T, psdonly), nout, length(sig_split))
+    out = zeros(stfttype(T, psdonly), (nout, length(sig_split)))
     tmp = Vector{fftouttype(T)}(undef, T<:Real ? (nfft >> 1)+1 : nfft)
     r = fs*norm2
 
